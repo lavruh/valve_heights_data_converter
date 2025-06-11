@@ -1,0 +1,22 @@
+name: valve_heights_data_converter
+description: "App to convert csv files with data collected from digital caliper into valve heights report."
+publish_to: 'none'
+version: 1.0.0+1
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  file_provider:
+    git: https://github.com/lavruh/file_provider.git
+  csv: ^6.0.0
+
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+flutter:
+  uses-material-design: true
