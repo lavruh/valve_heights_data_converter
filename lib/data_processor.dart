@@ -1,4 +1,6 @@
 import 'package:csv/csv.dart';
+import 'package:excel/excel.dart';
+import 'package:flutter/services.dart';
 import 'package:valve_heights_data_converter/cylinder_measurement.dart';
 
 const cylinderSequence = {
@@ -92,14 +94,13 @@ class DataProcessor {
           valveValues.putIfAbsent(valve, () => [v2, v1]);
         }
         dataRowIndex += 2;
-        print(valveValues);
       }
-      print("valveValues out > $valveValues");
 
       output[cyl] = cylMeasure.copyWith(values: valveValues);
-      print(output);
       cylIndex += 1;
     }
     return output;
   }
 }
+
+

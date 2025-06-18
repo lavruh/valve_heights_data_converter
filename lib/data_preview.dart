@@ -26,6 +26,7 @@ class DataPreview extends StatelessWidget {
   List<Widget> getChildren(String prefix) {
     List<Widget> out = [];
     for (int i = 0; i <= data.length; i++) {
+      if(i>5) continue;
       final n = "$prefix${i + 1}";
       final cyl = data[n];
       Widget content = Text("$n");

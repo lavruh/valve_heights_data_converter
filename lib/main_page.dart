@@ -1,5 +1,10 @@
+import 'dart:io';
+
+import 'package:excel/excel.dart';
 import 'package:file_provider/file_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:valve_heights_data_converter/cylinder_measurement.dart';
 import 'package:valve_heights_data_converter/data_preview.dart';
 import 'package:valve_heights_data_converter/data_processor.dart';
@@ -130,7 +135,7 @@ class _MainPageState extends State<MainPage> {
       measurementSequence: measurementSeqState,
     );
 
-    // csvData = _generateCsvData();
+    csvData = _generateCsvData();
 
     final data = proc.convertCsvToDataTable(csvData);
     setState(() {
@@ -161,7 +166,75 @@ class _MainPageState extends State<MainPage> {
     return items;
   }
 
-  void _exportReport() {}
+  void _exportReport() async {
+    final data = await rootBundle.load('assets/template.xlsx');
+    final bytes =
+        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+    final excel = Excel.decodeBytes(bytes);
+    final table = excel.tables["Sheet1"];
+    if (table == null) return;
+
+    var cell =
+        table.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: 6));
+    cell.value = DoubleCellValue(13.37);
+
+    final outRegions = {
+      "A1": [3, 6],
+      "A2": [3, 10],
+      "A3": [3, 14],
+      "A4": [3, 18],
+      "A5": [3, 22],
+      "A6": [3, 26],
+      "B1": [11, 6],
+      "B2": [11, 10],
+      "B3": [11, 14],
+      "B4": [11, 18],
+      "B5": [11, 22],
+      "B6": [11, 26]
+    };
+    final valveOffset = {"A": 0, "B": 1, "C": 2, "D": 3};
+
+    for (final cyl in previewData.values) {
+      final outLoc = outRegions[cyl.name];
+      if (outLoc == null) continue;
+      final col = outLoc[0];
+      final row = outLoc[1];
+
+      for (final valve in cyl.values.keys) {
+        final offset = valveOffset[valve];
+        final readings = cyl.values[valve];
+        if (offset == null || readings == null) continue;
+
+        var stem = table.cell(CellIndex.indexByColumnRow(
+            columnIndex: col, rowIndex: row + offset));
+        var rotator = table.cell(CellIndex.indexByColumnRow(
+            columnIndex: col + 1, rowIndex: row + offset));
+
+        final stemStyle = stem.cellStyle;
+        stem.value = DoubleCellValue(readings[0]);
+        stem.cellStyle = stemStyle;
+        final rotatorStyle = rotator.cellStyle;
+        rotator.value = DoubleCellValue(readings[1]);
+        rotator.cellStyle = rotatorStyle;
+      }
+    }
+
+    if (kIsWeb) {
+      excel.save(fileName: "measurement.xlsx");
+    } else {
+      final fileBytes = excel.save();
+      if (fileBytes == null) return;
+      final IFileProvider fileProvider = FileProvider.getInstance();
+      final file = await fileProvider.selectFile(
+          context: context,
+          title: "Select output file",
+          allowedExtensions: ["xlsx"]);
+      String path = file.path.split(".")[0];
+      File("$path.xlsx")
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(fileBytes);
+    }
+  }
 }
 
 String _generateCsvData() {
@@ -169,53 +242,9 @@ String _generateCsvData() {
   final realDeviceData = """#,"0610022839","caliper",,,,,""
 0.00,"OK","2025/6/14 3:45"
 13.03,"OK","2025/6/14 3:45"
-29.63,"OK","2025/6/14 3:45"
-143.48,"OK","2025/6/14 3:45"
-103.01,"OK","2025/6/14 3:45"
-74.86,"OK","2025/6/14 3:45"
-49.11,"OK","2025/6/14 3:45"
-22.69,"OK","2025/6/14 3:45"
-110.80,"OK","2025/6/14 3:45"
-74.75,"OK","2025/6/14 3:45"
-49.79,"OK","2025/6/14 3:45"
-104.82,"OK","2025/6/14 3:45"
-29.43,"OK","2025/6/14 3:45"
-112.45,"OK","2025/6/14 3:45"
-43.16,"OK","2025/6/14 3:45"
-70.00,"OK","2025/6/14 3:45"
-17.95,"OK","2025/6/14 3:45"
-50.14,"OK","2025/6/14 3:45"
-67.18,"OK","2025/6/14 3:45"
-110.06,"OK","2025/6/14 3:45"
-140.97,"OK","2025/6/14 3:45"
-94.90,"OK","2025/6/14 3:46"
-124.80,"OK","2025/6/14 3:46"
-32.60,"OK","2025/6/14 3:46"
-85.96,"OK","2025/6/14 3:46"
-112.06,"OK","2025/6/14 3:46"
-16.94,"OK","2025/6/14 3:46"
-10.82,"OK","2025/6/14 3:46"
-59.10,"OK","2025/6/14 3:46"
-80.20,"OK","2025/6/14 3:46"
-56.04,"OK","2025/6/14 3:46"
-75.15,"OK","2025/6/14 3:46"
-21.15,"OK","2025/6/14 3:46"
-130.50,"OK","2025/6/14 3:46"
-100.00,"OK","2025/6/14 3:46"
-84.68,"OK","2025/6/14 3:46"
-65.61,"OK","2025/6/14 3:46"
-30.98,"OK","2025/6/14 3:46"
-18.41,"OK","2025/6/14 3:46"
-138.64,"OK","2025/6/14 3:46"
-60.01,"OK","2025/6/14 3:46"
-89.17,"OK","2025/6/14 3:46"
-31.49,"OK","2025/6/14 3:46"
-69.11,"OK","2025/6/14 3:46"
-99.99,"OK","2025/6/14 3:46"
 """;
   for (double i = 0.0; i < 12 * 4 * 2; i += 1.0) {
     out = '$out\n${i.toStringAsFixed(2)},"OK","2025/6/14 3:46"';
   }
-  print(out);
   return out;
 }
