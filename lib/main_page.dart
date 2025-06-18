@@ -135,8 +135,6 @@ class _MainPageState extends State<MainPage> {
       measurementSequence: measurementSeqState,
     );
 
-    csvData = _generateCsvData();
-
     final data = proc.convertCsvToDataTable(csvData);
     setState(() {
       previewData = data;
