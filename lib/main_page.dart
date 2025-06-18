@@ -172,10 +172,6 @@ class _MainPageState extends State<MainPage> {
     final table = excel.tables["Sheet1"];
     if (table == null) return;
 
-    var cell =
-        table.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: 6));
-    cell.value = DoubleCellValue(13.37);
-
     final outRegions = {
       "A1": [3, 6],
       "A2": [3, 10],
